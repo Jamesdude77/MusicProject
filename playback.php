@@ -1,52 +1,29 @@
 <?php
 session_start();
 $_SESSION['youtubeId'] = $_GET['youtubeId'];
-$_SESSION['userId'] = 1;
-$_SESSION['pieceId'] = getPieceId($_GET['youtubeId']);
-$_SESSION['playbackId'] = getPlaybackId();
-
-function getPieceId($youtubeId) {
-	$sql = "SELECT `piece`.`PieceId` FROM `musicprojectdb`.`piece` WHERE `piece`.`YoutubeId` = '".$youtubeId."'; ";
-	$con=mysqli_connect("localhost","root","","MusicProjectDB");
-	if (!$con) {
-	  die('Could not connect: ' . mysqli_error($con));
-	}
-	$result = mysqli_query($con,$sql);
-	if (!$result) {
-		$message  = 'Invalid query: ' . mysqli_error() . "\n";
-		$message .= 'Whole query: ' . $sql;
-		die($message);
-	}
-	return implode(mysqli_fetch_assoc($result));
-}
-
-function getPlaybackId() {
-	$sql = "INSERT INTO `musicprojectdb`.`playback` (`UserId`,`PieceId`) VALUES (".$_SESSION['userId'].",".$_SESSION['pieceId'].");";
-	$con=mysqli_connect("localhost","root","","MusicProjectDB");
-	if (!$con) {
-	  die('Could not connect: ' . mysqli_error($con));
-	}
-	$result = mysqli_query($con,$sql);
-	if (!$result) {
-		$message  = 'Invalid query: ' . mysqli_error($con) . "\n";
-		$message .= 'Whole query: ' . $sql;
-		die($message);
-	}
-	return mysqli_insert_id($con);
-}
-
 ?>
 
 <html>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="Chart.min.js"></script>
+
 <script>
       // 2. This code loads the IFrame Player API code asynchronously.
       var tag = document.createElement('script');
-
+	  
       tag.src = "https://www.youtube.com/iframe_api";
       var firstScriptTag = document.getElementsByTagName('script')[0];
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
+	  function getQueryString() {
+	  var result = {}, queryString = location.search.slice(1),
+		  re = /([^&=]+)=([^&]*)/g, m;
+	  while (m = re.exec(queryString)) {
+		result[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+	  }
+		  return result;
+	}
+	  
       // 3. This function creates an <iframe> (and YouTube player)
       //    after the API code downloads.
       var player;
@@ -54,7 +31,7 @@ function getPlaybackId() {
         player = new YT.Player('player', {
           height: '390',
           width: '640',
-          videoId: 'c7OS_vpMz-s',
+          videoId: getQueryString()['youtubeId'],
           events: {
             'onReady': onPlayerReady,
             'onStateChange': onPlayerStateChange
@@ -66,7 +43,7 @@ function getPlaybackId() {
       function onPlayerReady(event) {
 		// tell php about the video
 		xmlhttp=new XMLHttpRequest();
-		xmlhttp.open("GET","databaseInsert.php?action=insertPieceDetails&pieceName="+player.getVideoData().title+"&pieceLength="+player.getDuration(),true);
+		xmlhttp.open("GET","controller.php?action=initialisePlayback&pieceName="+player.getVideoData().title+"&pieceLength="+player.getDuration(),true);
 		xmlhttp.send();
 	  
         event.target.playVideo();
@@ -80,7 +57,21 @@ function getPlaybackId() {
         if (event.data == YT.PlayerState.PLAYING && !done) {
           done = true;
         }
-      }
+		
+		if(event.data === 0) {
+			 $.ajax({
+				type: "GET",
+				dataType: "json",
+				url: "view.php?playbackId=26", //Relative or absolute path to response.php file
+				success: function(response) {
+				
+					alert("Form submitted successfully.\nReturned json: " + response);
+					drawGraph(response);
+				}
+			});
+		}
+	  }
+	  
       function stopVideo() {
         player.stopVideo();
       }
@@ -89,27 +80,43 @@ function getPlaybackId() {
 		xmlhttp=new XMLHttpRequest();
 		xmlhttp.onreadystatechange=function() {
 			if (xmlhttp.readyState==4 && xmlhttp.status==200) {
-			  $("span").text("data inserted");
+			  //$("span").text("data inserted");
 			}
 		  }
-		xmlhttp.open("GET","databaseInsert.php?action=insertPlaybackEvent&playbackEventTime="+player.getCurrentTime(),true);
+		xmlhttp.open("GET","controller.php?action=insertPlaybackEvent&playbackEventTime="+player.getCurrentTime(),true);
 		xmlhttp.send();
   	});
+	
+	function drawGraph(data) {
+		var graphData = {
+							labels: [0,5,10,15,20,25,30,35,40,45,50,55,60],
+							datasets: [
+								{
+									label: "My First dataset",
+									fillColor: "rgba(220,220,220,0.2)",
+									strokeColor: "rgba(220,220,220,1)",
+									pointColor: "rgba(220,220,220,1)",
+									pointStrokeColor: "#fff",
+									pointHighlightFill: "#fff",
+									pointHighlightStroke: "rgba(220,220,220,1)",
+									data: []
+								}
+							]
+						};
+		graphData.datasets[0].data = data;
+		
+		var ctx = document.getElementById("myChart").getContext("2d");
+		var myNewChart = new Chart(ctx).Line(graphData, {
+												bezierCurve: false
+											});
+	}
 </script>
 <body>
 Test page for James' music appreciation project
 
-<?php 
-echo $_SESSION['youtubeId']."\n";
-echo $_SESSION['userId']."\n";
-echo $_SESSION['pieceId']."\n";
-echo $_SESSION['playbackId']."\n";
-
-?>
-
 <p><div id="player"></div></p>
 
-<p>Keypresses: <span>0</span></p>
+<p>Graph: <canvas id="myChart" width="400" height="400"></canvas></p>
 
 </body>
 </html>
