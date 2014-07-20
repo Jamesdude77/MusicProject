@@ -9,6 +9,8 @@
 	Youtube ID: <input type="text" name="youtubeId">
 	<input type="submit" value="Submit">
 	</form> 
+	
+	<p><a href="history.php">History Page</a></p>
  <?php
  session_start();
  $_SESSION['userId'] = 1;

@@ -62,9 +62,9 @@ $_SESSION['youtubeId'] = $_GET['youtubeId'];
 			 $.ajax({
 				type: "GET",
 				dataType: "json",
-				url: "view.php?", //Relative or absolute path to response.php file
+				url: "view.php?action=getPlaybackStats", //Relative or absolute path to response.php file
 				success: function(response) {
-					drawGraph(response);
+					drawGraph(response, player.getDuration());
 				}
 			});
 		}
@@ -85,9 +85,7 @@ $_SESSION['youtubeId'] = $_GET['youtubeId'];
 		xmlhttp.send();
   	});
 	
-	function drawGraph(rawData) {
-	
-	alert("starting on graph");
+	function drawGraph(rawData, duration) {
 		var graphData = {
 							labels: [],
 							datasets: [
@@ -106,7 +104,7 @@ $_SESSION['youtubeId'] = $_GET['youtubeId'];
 		var labels = [];
 		var data = [];
 		var z = 0;
-		for (x = 0; x < player.getDuration(); x+=5)
+		for (x = 0; x < duration; x+=5)
 		{
 			labels[z] = x;
 			z++;
@@ -133,6 +131,8 @@ $_SESSION['youtubeId'] = $_GET['youtubeId'];
 </script>
 <body>
 Test page for James' music appreciation project
+
+<p><a href="index.php">Back to Index</a></p>
 
 <p><div id="player"></div></p>
 
