@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-$row = getPlaybackStats($_SESSION['playbackId']);
+$row = getPlaybackStats(71); //$_SESSION['playbackId']);
 header('Content-Type: application/json');
 echo json_encode($row);
 

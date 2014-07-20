@@ -33,7 +33,7 @@ function getPieceId($youtubeId) {
 	}
 	$result = mysqli_query($con,$sql);
 	if (!$result) {
-		$message  = 'Invalid query: ' . mysqli_error() . "\n";
+		$message  = 'Invalid query: ' . mysqli_error($con) . "\n";
 		$message .= 'Whole query: ' . $sql;
 		die($message);
 	}

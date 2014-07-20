@@ -62,10 +62,8 @@ $_SESSION['youtubeId'] = $_GET['youtubeId'];
 			 $.ajax({
 				type: "GET",
 				dataType: "json",
-				url: "view.php?playbackId=26", //Relative or absolute path to response.php file
+				url: "view.php?", //Relative or absolute path to response.php file
 				success: function(response) {
-				
-					alert("Form submitted successfully.\nReturned json: " + response);
 					drawGraph(response);
 				}
 			});
@@ -87,9 +85,11 @@ $_SESSION['youtubeId'] = $_GET['youtubeId'];
 		xmlhttp.send();
   	});
 	
-	function drawGraph(data) {
+	function drawGraph(rawData) {
+	
+	alert("starting on graph");
 		var graphData = {
-							labels: [0,5,10,15,20,25,30,35,40,45,50,55,60],
+							labels: [],
 							datasets: [
 								{
 									label: "My First dataset",
@@ -103,6 +103,26 @@ $_SESSION['youtubeId'] = $_GET['youtubeId'];
 								}
 							]
 						};
+		var labels = [];
+		var data = [];
+		var z = 0;
+		for (x = 0; x < player.getDuration(); x+=5)
+		{
+			labels[z] = x;
+			z++;
+			data[x] = 0;
+			for  (y = 0; y < rawData.length; y++)
+			{
+				if (rawData[y] < x+2.5 && rawData[y] > x-2.5)
+				{
+					data[x] = data[x] + 1;
+				}
+				else if (rawData[y] > x+2.5)
+					break;
+			}
+		}
+		alert("after for loop");
+		graphData.labels = labels;
 		graphData.datasets[0].data = data;
 		
 		var ctx = document.getElementById("myChart").getContext("2d");
