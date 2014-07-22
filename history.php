@@ -4,97 +4,122 @@
  </head>
  <body>
  <p>Welcome to your Music Project History</p>
- <p>Please choose a piece from the drop down:</p>
+ <p>Please click rows to expand:</p>
+ <style>
+ .hidden
+{
+display:none;
+} 
+ </style>
  <script src="Chart.min.js"></script>
  <script>
 
-  if (window.XMLHttpRequest) {
-    // code for IE7+, Firefox, Chrome, Opera, Safari
-    xmlhttp=new XMLHttpRequest();
-  } else { // code for IE6, IE5
-    xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-  }
-  xmlhttp.onreadystatechange=function() {
-    if (xmlhttp.readyState==4 && xmlhttp.status==200) {
-      document.getElementById("piecesTable").innerHTML=xmlhttp.responseText;
-	  addRowHandlers();
-    }
-  }
-  xmlhttp.open("GET","view.php?action=getPiecesHistory");
-  xmlhttp.send();
-  
-  function addRowHandlers() {
-    var table = document.getElementById("tableId");
-    var rows = table.getElementsByTagName("tr");
-    for (i = 0; i < rows.length; i++) {
-        var currentRow = table.rows[i];
-        var createClickHandler = 
-            function(row) 
+xmlhttpPieces=new XMLHttpRequest();
+xmlhttpPieces.onreadystatechange=function() {
+	if (xmlhttpPieces.readyState==4 && xmlhttpPieces.status==200) {
+		
+		// create table
+		var piecesTable = document.createElement('table');
+		// fill table
+		piecesData = JSON.parse(xmlhttpPieces.responseText);
+		for (i = 0; i < piecesData.length;i++)
+		{
+			var newRow = piecesTable.insertRow(i);
+			newRow.insertCell(0).innerHTML = piecesData[i]["PieceName"];
+			newRow.insertCell(1).innerHTML = piecesData[i]["PlaybackCount"];
+			newRow.insertCell(2).innerHTML = piecesData[i]["LatestPlayback"];
+			
+			var pieceId = piecesData[i]["PieceId"];
+			var pieceLength = piecesData[i]["PieceLength"];
+			
+			// add onclick function
+			var createClickHandler = 
+            function(piecesTableRow, pieceId, pieceLength) 
             {
-                return function() { 
-					var cell = row.getElementsByTagName("td")[0];
-					var pieceId = cell.innerHTML;
-					var thisRowIndex = this.rowIndex+1
-					var newRow = table.insertRow(this.rowIndex+1);
-					//var cell1 = newRow.insertCell(0);
-					//cell1.innerHTML = "Hello there";
-					
-					xmlhttp.onreadystatechange=function() {
-						if (xmlhttp.readyState==4 && xmlhttp.status==200) {
-							var playbackData = JSON.parse(xmlhttp.responseText);
-							for (i = 0; i < playbackData.length;i++)
-							{
-								var newRow = table.insertRow(thisRowIndex);
-								var creationDate = newRow.insertCell(0);
-								var eventCount = newRow.insertCell(1);
-								var playbackId = newRow.insertCell(2);
-								
-								creationDate.innerHTML = playbackData[i]["creationDate"];
-								eventCount.innerHTML = playbackData[i]["EventCount"];
-								playbackId.innerHTML = playbackData[i]["PlaybackId"];
-								
-								var createClickHandler = 
-								function(row) 
+                return function() {
+					var playbackTableDiv = document.getElementById("playbackTable"+pieceId);
+					if (playbackTableDiv == null)
+					{
+						// create playback rows
+						var newRow = piecesTableRow.parentNode.insertRow(piecesTableRow.rowIndex+1);
+						
+						var newDiv = document.createElement("div");
+						newDiv.setAttribute("id", "playbackTable"+pieceId);
+						newRow.appendChild(newDiv);
+						
+						// get playback data
+						xmlhttpPlaybacks=new XMLHttpRequest(); 
+						xmlhttpPlaybacks.onreadystatechange=function() {
+							if (xmlhttpPlaybacks.readyState==4 && xmlhttpPlaybacks.status==200) {
+								// create table
+								var playbacksTable = document.createElement('table');
+								// fill table
+								playbacksData = JSON.parse(xmlhttpPlaybacks.responseText);
+								for (x = 0; x < playbacksData.length;x++)
 								{
-									var playbackId2 = playbackId.innerHTML;
+									var playbackRow = playbacksTable.insertRow(x);//thisRowIndex+1);
+									playbackRow.insertCell(0).innerHTML = playbacksData[x]["creationDate"];
+									playbackRow.insertCell(1).innerHTML = playbacksData[x]["EventCount"];
 									
-									return function() {
-										xmlhttp.onreadystatechange=function() {
-										if (xmlhttp.readyState==4 && xmlhttp.status==200) {
-											var pieceLength = xmlhttp.responseText;
-											
-											xmlhttp2=new XMLHttpRequest();
-											xmlhttp2.onreadystatechange=function() {
-												if (xmlhttp2.readyState==4 && xmlhttp2.status==200) {
+									var playbackId = playbacksData[x]["PlaybackId"];
+									
+									// create onclick for graph
+									var createClickHandler = 
+									function(playbacksTableRow, pieceLength, playbackId) 
+									{
+										return function() {
+											// check for div
+											var chartDiv = document.getElementById("chart"+playbackId);
+											if (chartDiv == null)
+											{
+												// create playback rows
+												var graphRow = playbacksTableRow.parentNode.insertRow(playbacksTableRow.rowIndex+1);
 												
-													var newRow = table.insertRow(thisRowIndex);
-													var graph = newRow.insertCell(0);
-													graph.innerHTML = '<canvas id="myChart'+playbackId2+'" width="400" height="400"></canvas>';
-													drawGraph(JSON.parse(xmlhttp2.responseText), JSON.parse(pieceLength)[0], playbackId2);
-													
-												}
-											}	
-											xmlhttp2.open("GET","view.php?action=getPlaybackStats&playbackId="+playbackId2);
-											xmlhttp2.send();
+												var newDiv = document.createElement("div");
+												newDiv.innerHTML = '<canvas id="myChart'+playbackId+'" width="400" height="400"></canvas>';
+												newDiv.setAttribute("id", "chart"+playbackId);
+												graphRow.appendChild(newDiv);
+												
+												xmlhttpGraph=new XMLHttpRequest();
+												xmlhttpGraph.onreadystatechange=function() {
+													if (xmlhttpGraph.readyState==4 && xmlhttpGraph.status==200) {
+														var ctx = document.getElementById("myChart"+playbackId).getContext("2d");
+														drawGraph(JSON.parse(xmlhttpGraph.responseText), pieceLength, ctx);
+													}
+												}	
+												xmlhttpGraph.open("GET","view.php?action=getPlaybackStats&playbackId="+playbackId);
+												xmlhttpGraph.send();
 											}
-										}
-										xmlhttp.open("GET","view.php?action=getPieceInfo&pieceId="+pieceId);
-										xmlhttp.send();
+											else
+											{
+												chartDiv.parentNode.removeChild(chartDiv);
+											}
+										};
 									};
-								};
-								newRow.onclick = createClickHandler(newRow);
+									playbackRow.onclick = createClickHandler(playbackRow, pieceLength, playbackId);
+									
+								}
+								newDiv.appendChild(playbacksTable);
 							}
 						}
-					  }
-					  xmlhttp.open("GET","view.php?action=getPlaybackTable&pieceId="+pieceId);
-					  xmlhttp.send();
+						xmlhttpPlaybacks.open("GET","view.php?action=getPlaybackList&pieceId="+pieceId);
+						xmlhttpPlaybacks.send();
+					}
+					else
+					{
+						playbackTableDiv.parentNode.removeChild(playbackTableDiv);
+					}
 				};
 			};
-        currentRow.onclick = createClickHandler(currentRow);
-    }
+			newRow.onclick = createClickHandler(newRow, pieceId, pieceLength);
+		}
+		document.getElementById("piecesTable").appendChild(piecesTable);
+	}
 }
+xmlhttpPieces.open("GET","view.php?action=getPiecesList");
+xmlhttpPieces.send();
 
-function drawGraph(rawData, duration, playbackId) {
+function drawGraph(rawData, duration, canvasElement) {
 
 		var graphData = {
 							labels: [],
@@ -132,15 +157,12 @@ function drawGraph(rawData, duration, playbackId) {
 		graphData.labels = labels;
 		graphData.datasets[0].data = data;
 		
-		var ctx = document.getElementById("myChart"+playbackId).getContext("2d");
-		var myNewChart = new Chart(ctx).Line(graphData, {
-												bezierCurve: false
-											});
+		new Chart(canvasElement).Line(graphData, {});
 	}
 
 </script>
  
- <div id="piecesTable"><b>Playback info will be listed here.</b></div>
+ <div id="piecesTable"></div>
  
  <p><a href="index.php">Back to index</a></p>
  

@@ -12,15 +12,15 @@ if(isset($_GET['action']) && !empty($_GET['action']))
 			else
 				getPlaybackStats($_SESSION['playbackId']);
 			break;
-        case 'getPiecesHistory' :
-			getPiecesHistory($_SESSION['userId']);
+        case 'getPiecesList' :
+			getPiecesList($_SESSION['userId']);
 			break;
-		case 'getPlaybackTable' :
-			getPlaybackTable($_SESSION['userId'], $_GET['pieceId']);
+		case 'getPlaybackList' :
+			getPlaybackList($_SESSION['userId'], $_GET['pieceId']);
 			break;
-		case 'getPieceInfo' :
+		/*case 'getPieceInfo' :
 			getPieceInfo($_GET['pieceId']);
-			break;
+			break;*/
 		default: die("not recognised");
 	}
 }
@@ -41,7 +41,7 @@ function getUserInfo($userId)
 	return mysqli_fetch_object($result)->UserName; 
 }
 
-function getPiecesHistory($userId)
+function getPiecesList($userId)
 {
 	// get distinct pieces per user, with total viewings count
 	$con=mysqli_connect("localhost","root","","MusicProjectDB");
@@ -49,9 +49,9 @@ function getPiecesHistory($userId)
 	  die('Could not connect: ' . mysqli_error($con));
 	}
 
-	$sql="SELECT `piece`.`PieceId`, `piece`.`PieceName`, COUNT(`playback`.`PlaybackId`) AS PlaybackCount, MAX(`playback`.`creationDate`) AS LatestPlayback" .
+	$sql="SELECT `piece`.`PieceId`, `piece`.`PieceName`, COUNT(`playback`.`PlaybackId`) AS PlaybackCount, MAX(`playback`.`creationDate`) AS LatestPlayback, `piece`.`PieceLength`" .
 			" FROM `musicprojectdb`.`playback` JOIN `musicprojectdb`.`piece` on playback.PieceId = piece.Pieceid" .
-			" WHERE `playback`.`UserId` = ".$userId." GROUP BY playback.PieceId ORDER BY LatestPlayback desc";
+			" WHERE `playback`.`UserId` = ".$userId." GROUP BY playback.PieceId ORDER BY LatestPlayback DESC";
 	$result = mysqli_query($con,$sql);
 	if (!$result) {
 		$message  = 'Invalid query: ' . mysqli_error($con) . "\n";
@@ -59,20 +59,27 @@ function getPiecesHistory($userId)
 		die($message);
 	}
 	
-	echo '<table id="tableId">';
+	$rows = array();
+    while($row = $result->fetch_array(MYSQLI_ASSOC)) {
+        $rows[] = $row;
+    }
+	header('Content-Type: application/json');
+	echo json_encode($rows);
+	
+	/*echo '<table id="tableId">';
 
 	while($row = mysqli_fetch_array($result)) {
 	  echo "<tr>";
 	  echo "<th>" . $row['PieceName'] . "</th>";
 	  echo "<th>" . $row['PlaybackCount'] . "</th>";
 	  echo "<th>" . $row['LatestPlayback'] . "</th>";
-	  echo '<td style="display:none;">'. $row['PieceId'] . "</td>";
+	  echo '<div class="hidden">'. $row['PieceId'] . "</div>";
 	  echo "</tr>";
 	}
-	echo "</table>";
+	echo "</table>";*/
 }
 
-function getPieceInfo($pieceId)
+/*function getPieceInfo($pieceId)
 {
 	$sql = "SELECT `piece`.`YoutubeId`,`piece`.`PieceName`,`piece`.`PieceLength` FROM `musicprojectdb`.`piece` WHERE `piece`.`PieceId` = ".$pieceId;
 	$con=mysqli_connect("localhost","root","","MusicProjectDB");
@@ -92,9 +99,9 @@ function getPieceInfo($pieceId)
     }
 	header('Content-Type: application/json');
 	echo json_encode($rows);
-}
+}*/
 
-function getPlaybackTable($userId, $pieceId)
+function getPlaybackList($userId, $pieceId)
 {
 	$con=mysqli_connect("localhost","root","","MusicProjectDB");
 	if (!$con) {
@@ -121,16 +128,16 @@ function getPlaybackTable($userId, $pieceId)
     header('Content-Type: application/json');
 	echo json_encode($rows);
 	
-	//echo '<table id="playbackTableId">';
+	/*echo '<table id="playbackTableId'.$pieceId.'">';
 
-	/*while($row = mysqli_fetch_array($result)) {
+	while($row = mysqli_fetch_array($result)) {
 	  echo "<tr>";
 	  echo "<th>" . $row['creationDate'] . "</th>";
 	  echo "<th>" . $row['EventCount'] . " Events</th>";
 	  echo '<td style="display:none;">'. $row['PlaybackId'] . "</td>";
 	  echo "</tr>";
-	}*/
-	//echo "</table>";
+	}
+	echo "</table>";*/
 }
 
 function getPlaybackStats($playbackId)
