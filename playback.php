@@ -43,6 +43,11 @@ $_SESSION['youtubeId'] = $_GET['youtubeId'];
       function onPlayerReady(event) {
 		// tell php about the video
 		xmlhttp=new XMLHttpRequest();
+		xmlhttp.onreadystatechange=function() {
+			if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+			  document.getElementById("responseStatus").innerHTML = "Initialised";
+			}
+		  }
 		xmlhttp.open("GET","controller.php?action=initialisePlayback&pieceName="+player.getVideoData().title+"&pieceLength="+player.getDuration(),true);
 		xmlhttp.send();
 	  
@@ -74,11 +79,13 @@ $_SESSION['youtubeId'] = $_GET['youtubeId'];
         player.stopVideo();
       }
 	  
+	  var presses = 0;
 	$(document).keypress(function(){
 		xmlhttp=new XMLHttpRequest();
 		xmlhttp.onreadystatechange=function() {
 			if (xmlhttp.readyState==4 && xmlhttp.status==200) {
-			  //$("span").text("data inserted");
+			presses++;
+			  document.getElementById("responseStatus").innerHTML = "Keypresses: "+presses;
 			}
 		  }
 		xmlhttp.open("GET","controller.php?action=insertPlaybackEvent&playbackEventTime="+player.getCurrentTime(),true);
@@ -119,7 +126,6 @@ $_SESSION['youtubeId'] = $_GET['youtubeId'];
 					break;
 			}
 		}
-		alert("after for loop");
 		graphData.labels = labels;
 		graphData.datasets[0].data = data;
 		
@@ -131,6 +137,8 @@ $_SESSION['youtubeId'] = $_GET['youtubeId'];
 </script>
 <body>
 Test page for James' music appreciation project
+
+<p>Status: <div id="responseStatus"> Not connected </div> </p>
 
 <p><a href="index.php">Back to Index</a></p>
 
