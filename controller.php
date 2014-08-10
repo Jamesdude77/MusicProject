@@ -19,6 +19,8 @@ function initialisePlayback($youtubeId, $pieceName, $pieceLength) {
 		echo "was null";
 		// create new piece
 		$pieceId = insertPieceDetails($youtubeId, $pieceName, $pieceLength);
+		echo $youtubeId.$pieceName.$pieceLength;
+		echo "inserted piece";
 	}
 	
 	$_SESSION['pieceId'] = $pieceId;

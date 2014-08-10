@@ -20,11 +20,18 @@ xmlhttpPieces.onreadystatechange=function() {
 		
 		// create table
 		var piecesTable = document.createElement('table');
+		piecesTable.setAttribute("border", "1");
+		// create column headers_list
+		var newRow = piecesTable.insertRow(0);
+		newRow.insertCell(0).innerHTML = "PieceName";
+		newRow.insertCell(1).innerHTML = "PlaybackCount";
+		newRow.insertCell(2).innerHTML = "LatestPlayback";
+		
 		// fill table
 		piecesData = JSON.parse(xmlhttpPieces.responseText);
 		for (i = 0; i < piecesData.length;i++)
 		{
-			var newRow = piecesTable.insertRow(i);
+			var newRow = piecesTable.insertRow(i+1);
 			newRow.insertCell(0).innerHTML = piecesData[i]["PieceName"];
 			newRow.insertCell(1).innerHTML = piecesData[i]["PlaybackCount"];
 			newRow.insertCell(2).innerHTML = piecesData[i]["LatestPlayback"];
@@ -53,13 +60,14 @@ xmlhttpPieces.onreadystatechange=function() {
 							if (xmlhttpPlaybacks.readyState==4 && xmlhttpPlaybacks.status==200) {
 								// create table
 								var playbacksTable = document.createElement('table');
+								playbacksTable.setAttribute("border", "1");
 								// fill table
 								playbacksData = JSON.parse(xmlhttpPlaybacks.responseText);
 								for (x = 0; x < playbacksData.length;x++)
 								{
 									var playbackRow = playbacksTable.insertRow(x);//thisRowIndex+1);
 									playbackRow.insertCell(0).innerHTML = playbacksData[x]["creationDate"];
-									playbackRow.insertCell(1).innerHTML = playbacksData[x]["EventCount"];
+									playbackRow.insertCell(1).innerHTML = "Events: " + playbacksData[x]["EventCount"];
 									
 									var playbackId = playbacksData[x]["PlaybackId"];
 									
@@ -76,7 +84,7 @@ xmlhttpPieces.onreadystatechange=function() {
 												var graphRow = playbacksTableRow.parentNode.insertRow(playbacksTableRow.rowIndex+1);
 												
 												var newDiv = document.createElement("div");
-												newDiv.innerHTML = '<canvas id="myChart'+playbackId+'" width="400" height="400"></canvas>';
+												newDiv.innerHTML = '<canvas id="myChart'+playbackId+'" width="1000" height="400"></canvas>';
 												newDiv.setAttribute("id", "chart"+playbackId);
 												graphRow.appendChild(newDiv);
 												

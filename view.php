@@ -15,14 +15,43 @@ if(isset($_GET['action']) && !empty($_GET['action']))
         case 'getPiecesList' :
 			getPiecesList($_SESSION['userId']);
 			break;
+		case 'getPieceDuration' :
+			getPieceDuration($_GET['pieceId']);
+			break;
 		case 'getPlaybackList' :
 			getPlaybackList($_SESSION['userId'], $_GET['pieceId']);
 			break;
-		/*case 'getPieceInfo' :
-			getPieceInfo($_GET['pieceId']);
-			break;*/
+		case 'getOtherPlaybackList' :
+			getPlaybackList($_GET['userId'], $_GET['pieceId']);
+			break;
+		case 'getOtherUsersInfo' :
+			getOtherUsersInfo($_SESSION['userId']);
+			break;
 		default: die("not recognised");
 	}
+}
+
+function getOtherUsersInfo($userId)
+{
+	$sql = "SELECT `user`.`UserId`, `user`.`UserName` FROM `musicprojectdb`.`user` WHERE `user`.`UserId` != ".$userId;
+	$con=mysqli_connect("localhost","root","","MusicProjectDB");
+	if (!$con) {
+	  die('Could not connect: ' . mysqli_error($con));
+	}
+	$result = mysqli_query($con,$sql);
+	if (!$result) {
+		$message  = 'Invalid query: ' . mysqli_error() . "\n";
+		$message .= 'Whole query: ' . $sql;
+		die($message);
+	}
+	
+	$rows = array();
+    while($row = $result->fetch_array(MYSQLI_ASSOC)) {
+        $rows[] = $row;
+    }
+	
+    header('Content-Type: application/json');
+	echo json_encode($rows);
 }
 
 function getUserInfo($userId)
@@ -65,41 +94,7 @@ function getPiecesList($userId)
     }
 	header('Content-Type: application/json');
 	echo json_encode($rows);
-	
-	/*echo '<table id="tableId">';
-
-	while($row = mysqli_fetch_array($result)) {
-	  echo "<tr>";
-	  echo "<th>" . $row['PieceName'] . "</th>";
-	  echo "<th>" . $row['PlaybackCount'] . "</th>";
-	  echo "<th>" . $row['LatestPlayback'] . "</th>";
-	  echo '<div class="hidden">'. $row['PieceId'] . "</div>";
-	  echo "</tr>";
-	}
-	echo "</table>";*/
 }
-
-/*function getPieceInfo($pieceId)
-{
-	$sql = "SELECT `piece`.`YoutubeId`,`piece`.`PieceName`,`piece`.`PieceLength` FROM `musicprojectdb`.`piece` WHERE `piece`.`PieceId` = ".$pieceId;
-	$con=mysqli_connect("localhost","root","","MusicProjectDB");
-	if (!$con) {
-	  die('Could not connect: ' . mysqli_error($con));
-	}
-	$result = mysqli_query($con,$sql);
-	if (!$result) {
-		$message  = 'Invalid query: ' . mysqli_error($con) . "\n";
-		$message .= 'Whole query: ' . $sql;
-		die($message);
-	}
-	
-	$rows = array();
-    while($row = $result->fetch_array(MYSQLI_ASSOC)['PieceLength']) {
-        $rows[] = $row;
-    }
-	header('Content-Type: application/json');
-	echo json_encode($rows);
-}*/
 
 function getPlaybackList($userId, $pieceId)
 {
@@ -128,16 +123,6 @@ function getPlaybackList($userId, $pieceId)
     header('Content-Type: application/json');
 	echo json_encode($rows);
 	
-	/*echo '<table id="playbackTableId'.$pieceId.'">';
-
-	while($row = mysqli_fetch_array($result)) {
-	  echo "<tr>";
-	  echo "<th>" . $row['creationDate'] . "</th>";
-	  echo "<th>" . $row['EventCount'] . " Events</th>";
-	  echo '<td style="display:none;">'. $row['PlaybackId'] . "</td>";
-	  echo "</tr>";
-	}
-	echo "</table>";*/
 }
 
 function getPlaybackStats($playbackId)
@@ -156,6 +141,32 @@ function getPlaybackStats($playbackId)
 	
 	$rows = array();
     while($row = $result->fetch_array(MYSQLI_NUM)[0]) {
+        $rows[] = $row;
+    }
+	header('Content-Type: application/json');
+	echo json_encode($rows);
+}
+
+function getPieceDuration($pieceId)
+{
+	// get distinct pieces per user, with total viewings count
+	$con=mysqli_connect("localhost","root","","MusicProjectDB");
+	if (!$con) {
+	  die('Could not connect: ' . mysqli_error($con));
+	}
+
+	$sql="SELECT `piece`.`PieceLength`" .
+			" FROM `musicprojectdb`.`piece`" .
+			" WHERE `piece`.`PieceId` = ".$pieceId;
+	$result = mysqli_query($con,$sql);
+	if (!$result) {
+		$message  = 'Invalid query: ' . mysqli_error($con) . "\n";
+		$message .= 'Whole query: ' . $sql;
+		die($message);
+	}
+	
+	$rows = array();
+    while($row = $result->fetch_array(MYSQLI_ASSOC)) {
         $rows[] = $row;
     }
 	header('Content-Type: application/json');
