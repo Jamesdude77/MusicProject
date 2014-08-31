@@ -54,6 +54,33 @@
 			}	
 			xmlhttpGraph2.open("GET","view.php?action=getPlaybackStats&playbackId="+otherPlaybackId);
 			xmlhttpGraph2.send();
+			
+			//draw combined graph
+			playbackId = myPlaybackId;
+			var newDiv = document.getElementById("combinedGraph");
+			newDiv.innerHTML = '<canvas id="combinedChart'+playbackId+'" width="500" height="400"></canvas>';
+			//newDiv.setAttribute("id", "chart"+playbackId);
+			
+			xmlhttpGraph3=new XMLHttpRequest();
+			xmlhttpGraph3.onreadystatechange=function() {
+				if (xmlhttpGraph3.readyState==4 && xmlhttpGraph3.status==200) {
+				
+					
+					xmlhttpGraph4=new XMLHttpRequest();
+					xmlhttpGraph4.onreadystatechange=function() {
+						if (xmlhttpGraph4.readyState==4 && xmlhttpGraph4.status==200) {
+							var ctx = document.getElementById("combinedChart"+playbackId).getContext("2d");
+							drawCombinedGraph(JSON.parse(xmlhttpGraph3.responseText), JSON.parse(xmlhttpGraph4.responseText), pieceLength, ctx);
+						}
+					}	
+					xmlhttpGraph4.open("GET","view.php?action=getPlaybackStats&playbackId="+otherPlaybackId);
+					xmlhttpGraph4.send();
+					
+					//drawGraph(JSON.parse(xmlhttpGraph3.responseText), pieceLength, ctx);
+				}
+			}	
+			xmlhttpGraph3.open("GET","view.php?action=getPlaybackStats&playbackId="+playbackId);
+			xmlhttpGraph3.send();
 		}
 	}	
 	xmlhttpDuration.open("GET","view.php?action=getPieceDuration&pieceId="+pieceId);
@@ -231,6 +258,71 @@ function drawGraph(rawData, duration, canvasElement) {
 	new Chart(canvasElement).Line(graphData, {});
 }
 
+
+function drawCombinedGraph(rawData1, rawData2, duration, canvasElement) {
+
+	var graphData = {
+						labels: [],
+						datasets: [
+							{
+								label: "My First dataset",
+								fillColor: "rgba(0,220,0,0.2)",
+								strokeColor: "rgba(0,220,0,1)",
+								pointColor: "rgba(0,220,0,1)",
+								pointStrokeColor: "#fff",
+								pointHighlightFill: "#fff",
+								pointHighlightStroke: "rgba(220,220,220,1)",
+								data: []
+							},
+							{
+								label: "My Second dataset",
+								fillColor: "rgba(220,0,0,0.2)",
+								strokeColor: "rgba(220,0,0,1)",
+								pointColor: "rgba(220,0,0,1)",
+								pointStrokeColor: "#fff",
+								pointHighlightFill: "#fff",
+								pointHighlightStroke: "rgba(220,220,220,1)",
+								data: []
+							}
+						]
+					};
+	var labels = [];
+	var data1 = [];
+	var data2 = [];
+	var z = 0;
+	for (x = 0; x < duration; x+=5)
+	{
+		labels[z] = x;
+		z++;
+		data1[x] = 0;
+		data2[x] = 0;
+		for  (y = 0; y < rawData1.length; y++)
+		{
+			if (rawData1[y] < x+2.5 && rawData1[y] > x-2.5)
+			{
+				data1[x] = data1[x] + 1;
+			}
+			else if (rawData1[y] > x+2.5)
+				break;
+		}
+		
+		for  (y = 0; y < rawData2.length; y++)
+		{
+			if (rawData2[y] < x+2.5 && rawData2[y] > x-2.5)
+			{
+				data2[x] = data2[x] + 1;
+			}
+			else if (rawData2[y] > x+2.5)
+				break;
+		}
+	}
+	graphData.labels = labels;
+	graphData.datasets[0].data = data1;
+	graphData.datasets[1].data = data2;
+	
+	new Chart(canvasElement).Line(graphData, {});
+}
+
 </script>
 
  <body>
@@ -252,8 +344,16 @@ function drawGraph(rawData, duration, canvasElement) {
 <tr>
 	<td> <div id="myGraph" ></div> </td> <td> <div id="otherGraph" ></div> </td>
 </tr>
+
+<tr>
+	<td> <div id="combinedGraph" ></div> </td>
+</tr>
+
 </table>
 </p>
+
+
+<button type="button" onclick="loadGraph()">Click Me!</button> 
  
  
  <p><a href="index.php">Back to index</a></p>
