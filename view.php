@@ -155,7 +155,7 @@ function getPieceDuration($pieceId)
 	  die('Could not connect: ' . mysqli_error($con));
 	}
 
-	$sql="SELECT `piece`.`PieceLength`" .
+	$sql="SELECT `piece`.`PieceLength`, `piece`.`YoutubeId`" .
 			" FROM `musicprojectdb`.`piece`" .
 			" WHERE `piece`.`PieceId` = ".$pieceId;
 	$result = mysqli_query($con,$sql);

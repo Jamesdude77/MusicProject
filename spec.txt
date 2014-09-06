@@ -1,0 +1,317 @@
+to do:
+
+
+database tables:
+User info:
+-userId
+-userName
+-userPassword
+
+Playback records
+-userId
+-playbackId
+-playbackTime
+-comment?
+
+User's pieces:
+-userId
+-pieceId
+
+Piece info:
+-pieceid -PK, autoInc?
+-youtubeId -unique
+-pieceName
+-pieceLength
+
+Pages:
+Login page
+Overview page
+PlaybackPage
+
+---------
+=========
+DB notes:
+list of users
+list of pieces
+a playback contains many playback events
+a playback is related to a piece and a user
+playback event comments in separate table? avoids updating
+
+---------
+=========
+
+playback page loads:
+gets youtubeID at server
+selects the piece Id
+if no piece Id inserts piece details as new record
+
+get youtube id
+wait for client to send piece info
+
+select piece id
+no piece id
+
+controller:
+gets client video info
+if no pieceId in DB, inserts + creates playback
+if exists, creates playback
+
+client sends piece info
+server inserts if necessary
+server creates playback event
+
+
+index page
+prompt user for youtubeId
+get content from playback page, passing youtubeId
+
+client knows sessionId?
+which is key to datastore on server with:
+userId
+piece details
+playbackid
+youtubeId
+event time
+
+playback page:
+youtube Id provided -done
+video is loaded
+check success
+if cannot select a videoId with youtubeId from piece table, insert piece details, save pieceId
+insert new playback row, save playbackId
+on keypress, insert playbackevent
+
+page tracks:
+youtubeId
+videoId
+userId
+playbackId
+
+graph:
+x axis = video time
+-total time/ stepsize
+y axis, for each second of video, no. of points within X seconds
+-for each second, if data is in range of -2.5 to 2.5, increment, if more, break;
+
+---------
+=========
+
+Requirements:
+User can create account on first visit*
+user can enter username and password which are saved in database*
+passwords are handled in a safe fashion*
+
+on future visits user can log in*
+user sees a welcome page with:
+-selection of pieces previously viewed
+-option to input new piece
+-links to history and compare pages
+user can see a list of pieces they've listened to*
+user can see graphs of their responses to pieces they've listened to*
+user is prompted to re-listen to pieces?
+
+User can put in a youtube video Id to a piece*
+user can also select one previously listened to from a drop down list of titles
+User's pieces are saved in database*
+User is taken to a playback page for that piece
+
+Playback Page:
+RESPONSE PAGE
+page embeds video with given youtubeId*
+user can press key to record moments of interest*
+pressing key? causes a row to be inserted into database with:*
+unique userid, unique playbackId, time in video when spacebar was pressed*
+User gets visual feedback on keypress:
+	- fading alert? Green? distributed around screen randomly? Fireworks?
+User is encouraged to get to end of video in one sitting
+	- how? only if video ends does it get saved?
+User can take breaks? have responses in progress?
+ - save state and come back to the video at that point later on?
+Must discourage replaying parts of the video and rating them again/skipping bits??
+after responding user is asked if they made a fair response?
+If not a fair response data is cleared?
+
+Filter bad data?
+Limit on number of inserts? - protect against spamming playbackevents
+What to do if playback is stopped/restarted/scrolled back? restrict skipping playback?
+
+
+REVIEW PAGE
+When playback is complete user is taken to review page /*can review their presses in graph form*/
+Graph is produced showing points frequency against time:
+-height of y relates to number of points within X seconds?
+-needs finish time of video
+User can choose from different styles of graph
+User can annotate presses with comments?
+ - prompted to label peaks/troughs
+User can browse video by selecting points on graph
+User can overlay with other graphs:
+-graphs from other users
+-their own previous graphs
+Marker moves along graph when video plays to show current time
+User can overlay graph onto video, with marker to show current playbacktime
+
+How long can user edit things for? editing closes after time period??
+user can add comments on review page, but not after??
+on trying to leave page, user is asked if they would like to submit to archive? if yes playback is flagged for display?
+
+
+Video info table:
+record created when user selects new video
+record updated when user selects existing video?
+when page loaded, check if video has already been seen by selecting videoId using youtubeID
+If video has not been seen, create record in database
+If video has been seen, check details are up to date? occasionally?
+
+History page:
+User can browse to history page
+User sees table of pieces with number of playbacks and last played date, and (average presses per minute)
+User can select pieces they've viewed and is presented with an ordered list of playbacks, each row is clickable
+Playbacks show how many events are recorded on average per viewing
+Clicking a specific playback produces the graph of playback events
+graph has all features of review page, except editing?? basically opens review page
+-Opens video alongside?
+-Clicking points on graphs skips to point in video?
+
+Compare page:
+User can compare graphs with other users where the same piece has been reviewed
+graph comparison screen?
+user supplies two usernames
+page gives list of pieces both users have a record for in dropdown
+On selecting a piece, user has two dropdowns, one for each username, which list graphs for that piece.
+Graphs are overlayed? with video playing beneath?
+
+
+drilldown options:
+List of pieces
+	->list of playbacks
+		->playback graph
+
+---------
+=========
+Architecture:
+
+Requester (javascript)
+/\
+ |
+\/
+Web server (php)
+/\
+ |
+\/
+Database (mysql)
+
+Web server receives requests
+index.php is home
+web server is written in layers of php
+Follows model view controller pattern
+
+write an index.php which orchestrates components and handles URL
+calls view for output
+view generates output from database
+output in view includes references to controller when actions take place
+controller writes to database
+
+playback page calls database insert using AJAX
+calls via URL
+needs to reference a class
+
+
+
+To do:
+Create playback table -done
+create a playback page which logs keypresses -done
+populate table with playback info -done
+youtube api function: get length of video -player.getDuration() -done
+create video info table -done
+add controller function to populate video info table with video stats if video is new (if selecting youtube id returns null) -done
+add AJAX function to call controller video info function on page load -done
+-page load creates new playback Id -done
+-userId hardCoded -done
+-user can give a youtube Id and be taken to playback page -done
+-test that a new youtube video gets a new row in database -done
+-page loads video given by youtube ID -done
+-add date field to playback table -done
+	-auto populate date in query -done
+	-list of times for last playback -done
+	-give basic user info -done
+-get notification video has finished playing -done
+when video is finished, display data -done
+-when video ends graph of playback events displayed -done
+make AJAX call in playback page reference a controller (class)? -done
+-write view functions to retrieve playback data -done
+	-give history of pieces listened to -done
+-get list of distinct pieces for a user, with total number of viewings -done
+-lists all playbacks: playback date, no. of events, playbackId -done
+-selecting a playback shows graph of playback events -done
+-BUG graphs open in the wrong place in the table -fixed
+-graphs can be closed by clicking on their playback row -done
+-can filter by pieces -done
+-playback rows can be removed by clicking on piece row -done
+-user can create account -done
+-password handling implemented -done
+-user can log in, sets session ID? -done
+-user can log out, clears session ID? -done
+-user rejected from other pages if not logged in -done
+-visual feedback when key pressed -done
+
+Display video alongside graph
+Display a vertical red line over the graph
+Position red line according to current video time
+As video plays red line moves along the graph
+	- line is draggable? dragging line automatically skips to point in video
+
+index page:
+user can select previously listened to pieces and go to playback (dropdown?)
+- list of titles from getPiecesList(), youtubeId retrieved but hidden
+- selecting a title goes to playback with related youtubeId
+
+playback page:
+-BUG!!! New piece sometimes fails to insert on first playback, null object error line 41 of controller
+	-don't play video if playback has failed to load
+-make getplaybackID take pieceid as parameter?
+-filter keypresses to specific key?
+-improve keypress feedback
+		-colour
+		-fades
+		-random location in set area?
+-split into review page and response page - UPDATE SPEC**, create plan
+	-playback page becomes response page, on video end loads review page with playbackId
+
+review page:
+-shows graph
+
+-clicking points on graph skips to that point in video
+-user can annotate graph points with comments
+
+
+history page:
+-neaten up table display
+	-table column names
+-videos play alongside graphs?
+-fix graph labels
+	-make x axis scale nicely
+	-read docs
+
+general:
+-use mysql parameters
+find the following youtube api functions:
+-get notification user has gone back/ahead in video?
+
+comments for graph peaks
+graph comparison algorithm
+users can compare graphs
+
+
+----------
+==========
+compare page:
+dropdown of other users by name
+table with two cells
+two headers containing dropdowns
+left has list of user pieces
+
+choose a piece and a user
+dropdowns for playbacks
+displays your graph
+
